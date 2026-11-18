@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us | TAVENZIQ ENTERPRISES{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <p class="eyebrow">GET IN TOUCH</p>
+    <h1>Let's Talk Business.</h1>
+    <p>We would love to hear from you. Send us your enquiry.</p>
+</section>
+
+<section class="section">
+    <div class="contact-layout">
+        <div class="contact-info">
+            <h2>Contact TAVENZIQ</h2>
+            <p>Whether you need event services, supplies or travel arrangements,
+            our team is ready to hear from you.</p>
+
+            <h3>Our Business Areas</h3>
+            <p>Events & Entertainment</p>
+            <p>Cereals & General Supplies</p>
+            <p>Tours & Travel</p>
+        </div>
+
+        <form class="contact-form" method="POST">
+            <h2>Send an Enquiry</h2>
+
+            <label>Your Full Name</label>
+            <input type="text" name="name" required>
+
+            <label>Email Address</label>
+            <input type="email" name="email">
+
+            <label>Phone Number</label>
+            <input type="tel" name="phone" required>
+
+            <label>Service Required</label>
+            <select name="service">
+                <option>Events & Entertainment</option>
+                <option>Cereals & General Supplies</option>
+                <option>Tours & Travel</option>
+                <option>Other Enquiry</option>
+            </select>
+
+            <label>Your Message</label>
+            <textarea name="message" rows="5" required></textarea>
+
+            <button type="submit" class="btn primary">Submit Enquiry</button>
+        </form>
+    </div>
+</section>
+{% endblock %}
