@@ -1,52 +1,262 @@
+
 {% extends "base.html" %}
 
 {% block title %}Contact Us | TAVENZIQ ENTERPRISES{% endblock %}
 
 {% block content %}
+
+<!-- CONTACT PAGE HERO -->
 <section class="page-hero">
+
     <p class="eyebrow">GET IN TOUCH</p>
+
     <h1>Let's Talk Business.</h1>
-    <p>We would love to hear from you. Send us your enquiry.</p>
+
+    <p>
+        We would love to hear from you.
+        Send us your enquiry and let us help you.
+    </p>
+
 </section>
 
+
+<!-- CONTACT SECTION -->
 <section class="section">
+
     <div class="contact-layout">
+
+        <!-- BUSINESS CONTACT INFORMATION -->
         <div class="contact-info">
+
             <h2>Contact TAVENZIQ</h2>
-            <p>Whether you need event services, supplies or travel arrangements,
-            our team is ready to hear from you.</p>
+
+            <p>
+                Whether you need event services, supplies or travel
+                arrangements, our team is ready to hear from you.
+            </p>
 
             <h3>Our Business Areas</h3>
+
             <p>Events & Entertainment</p>
+
             <p>Cereals & General Supplies</p>
+
             <p>Tours & Travel</p>
+
+            <h3>WhatsApp Contact</h3>
+
+            <p>+254 180 810 562</p>
+
+            <a
+                href="https://wa.me/254180810562"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn primary"
+            >
+                Chat with Us
+            </a>
+
         </div>
 
-        <form class="contact-form" method="POST">
+
+        <!-- CUSTOMER ENQUIRY FORM -->
+        <form
+            class="contact-form"
+            method="POST"
+            id="customerEnquiryForm"
+        >
+
             <h2>Send an Enquiry</h2>
 
-            <label>Your Full Name</label>
-            <input type="text" name="name" required>
+            <p>
+                Complete the details below and choose how you would
+                like to send your enquiry.
+            </p>
 
-            <label>Email Address</label>
-            <input type="email" name="email">
 
-            <label>Phone Number</label>
-            <input type="tel" name="phone" required>
+            <label for="customer-name">Your Full Name</label>
 
-            <label>Service Required</label>
-            <select name="service">
-                <option>Events & Entertainment</option>
-                <option>Cereals & General Supplies</option>
-                <option>Tours & Travel</option>
-                <option>Other Enquiry</option>
+            <input
+                type="text"
+                id="customer-name"
+                name="name"
+                placeholder="Enter your full name"
+                required
+            >
+
+
+            <label for="customer-email">Email Address</label>
+
+            <input
+                type="email"
+                id="customer-email"
+                name="email"
+                placeholder="Enter your email address"
+            >
+
+
+            <label for="customer-phone">Phone Number</label>
+
+            <input
+                type="tel"
+                id="customer-phone"
+                name="phone"
+                placeholder="Enter your phone number"
+                required
+            >
+
+
+            <label for="customer-service">Service Required</label>
+
+            <select
+                id="customer-service"
+                name="service"
+                required
+            >
+
+                <option value="Events & Entertainment">
+                    Events & Entertainment
+                </option>
+
+                <option value="Cereals & General Supplies">
+                    Cereals & General Supplies
+                </option>
+
+                <option value="Tours & Travel">
+                    Tours & Travel
+                </option>
+
+                <option value="Other Enquiry">
+                    Other Enquiry
+                </option>
+
             </select>
 
-            <label>Your Message</label>
-            <textarea name="message" rows="5" required></textarea>
 
-            <button type="submit" class="btn primary">Submit Enquiry</button>
+            <label for="customer-message">Your Message</label>
+
+            <textarea
+                id="customer-message"
+                name="message"
+                rows="5"
+                placeholder="Tell us how we can help you..."
+                required
+            ></textarea>
+
+
+            <!-- SAVE ENQUIRY TO WEBSITE DATABASE -->
+            <button
+                type="submit"
+                class="btn primary"
+            >
+                Submit Enquiry
+            </button>
+
+
+            <!-- SEND ENQUIRY THROUGH WHATSAPP -->
+            <button
+                type="button"
+                class="btn whatsapp-submit-btn"
+                id="sendWhatsAppEnquiry"
+            >
+                Send Enquiry via WhatsApp
+            </button>
+
+
+            <p class="form-note">
+                You can submit your enquiry to our website or send
+                it directly to us through WhatsApp.
+            </p>
+
         </form>
+
     </div>
+
 </section>
+
+
+<!-- WHATSAPP ENQUIRY SCRIPT -->
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const form = document.getElementById("customerEnquiryForm");
+
+    const whatsappButton = document.getElementById(
+        "sendWhatsAppEnquiry"
+    );
+
+    whatsappButton.addEventListener("click", function () {
+
+        // Validate required fields
+        if (!form.reportValidity()) {
+            return;
+        }
+
+        // Collect customer information
+        const name = document.getElementById(
+            "customer-name"
+        ).value.trim();
+
+        const email = document.getElementById(
+            "customer-email"
+        ).value.trim();
+
+        const phone = document.getElementById(
+            "customer-phone"
+        ).value.trim();
+
+        const service = document.getElementById(
+            "customer-service"
+        ).value;
+
+        const message = document.getElementById(
+            "customer-message"
+        ).value.trim();
+
+
+        // Prepare WhatsApp message
+        const whatsappMessage =
+            "Hello TAVENZIQ ENTERPRISES,\n\n" +
+
+            "I would like to make an enquiry.\n\n" +
+
+            "CUSTOMER DETAILS\n" +
+
+            "Name: " + name + "\n" +
+
+            "Phone: " + phone + "\n" +
+
+            "Email: " + (email || "Not provided") + "\n\n" +
+
+            "SERVICE REQUIRED\n" +
+
+            service + "\n\n" +
+
+            "MESSAGE\n" +
+
+            message + "\n\n" +
+
+            "Thank you.";
+
+
+        // Encode message for WhatsApp
+        const whatsappURL =
+            "https://wa.me/254180810562?text=" +
+            encodeURIComponent(whatsappMessage);
+
+
+        // Open WhatsApp
+        window.open(
+            whatsappURL,
+            "_blank",
+            "noopener,noreferrer"
+        );
+
+    });
+
+});
+
+</script>
+
 {% endblock %}

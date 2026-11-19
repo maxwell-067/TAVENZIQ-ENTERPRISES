@@ -1,0 +1,257 @@
+
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard | TAVENZIQ ENTERPRISES{% endblock %}
+
+{% block content %}
+<section class="admin-dashboard">
+
+    <div class="admin-heading">
+        <div>
+            <p class="eyebrow">TAVENZIQ ENTERPRISES</p>
+            <h1>Admin Dashboard</h1>
+            <p>Welcome, {{ session.get('admin_username') }}.</p>
+        </div>
+
+        <a href="{{ url_for('admin_logout') }}" class="btn primary">
+            Log Out
+        </a>
+    </div>
+
+    <!-- DASHBOARD STATISTICS -->
+    <div class="admin-stat-grid">
+
+        <div class="admin-stat">
+            <span>Total Enquiries</span>
+            <strong>{{ total }}</strong>
+        </div>
+
+        <div class="admin-stat">
+            <span>New</span>
+            <strong>{{ new_count }}</strong>
+        </div>
+
+        <div class="admin-stat">
+            <span>In Progress</span>
+            <strong>{{ progress_count }}</strong>
+        </div>
+
+        <div class="admin-stat">
+            <span>Completed</span>
+            <strong>{{ completed_count }}</strong>
+        </div>
+
+    </div>
+
+    <!-- ENQUIRY HEADING -->
+    <div class="admin-table-heading">
+        <div>
+            <h2>Customer Enquiries</h2>
+            <p>Search, filter and manage customer messages.</p>
+        </div>
+    </div>
+
+    <!-- SEARCH AND FILTER FORM -->
+    <form method="GET"
+          action="{{ url_for('admin_dashboard') }}"
+          class="enquiry-filter-form">
+
+        <input
+            type="search"
+            name="search"
+            placeholder="Search name, phone, email or message..."
+            value="{{ search }}"
+        >
+
+        <select name="status">
+            <option value="">All Statuses</option>
+
+            <option value="New"
+                {% if status_filter == 'New' %}selected{% endif %}>
+                New
+            </option>
+
+            <option value="In Progress"
+                {% if status_filter == 'In Progress' %}selected{% endif %}>
+                In Progress
+            </option>
+
+            <option value="Completed"
+                {% if status_filter == 'Completed' %}selected{% endif %}>
+                Completed
+            </option>
+        </select>
+
+        <select name="service">
+            <option value="">All Services</option>
+
+            <option value="Events & Entertainment"
+                {% if service_filter == 'Events & Entertainment' %}selected{% endif %}>
+                Events & Entertainment
+            </option>
+
+            <option value="Cereals & General Supplies"
+                {% if service_filter == 'Cereals & General Supplies' %}selected{% endif %}>
+                Cereals & General Supplies
+            </option>
+
+            <option value="Tours & Travel"
+                {% if service_filter == 'Tours & Travel' %}selected{% endif %}>
+                Tours & Travel
+            </option>
+
+            <option value="Other Enquiry"
+                {% if service_filter == 'Other Enquiry' %}selected{% endif %}>
+                Other Enquiry
+            </option>
+        </select>
+
+        <button type="submit" class="btn primary">
+            Search
+        </button>
+
+        <a href="{{ url_for('admin_dashboard') }}"
+           class="btn admin-reset-btn">
+            Clear
+        </a>
+
+    </form>
+
+    <p class="enquiry-result-count">
+        Showing {{ enquiries|length }} enquiry record(s).
+    </p>
+
+    <!-- CUSTOMER ENQUIRIES -->
+    {% if enquiries %}
+
+        <div class="admin-enquiry-list">
+
+            {% for enquiry in enquiries %}
+
+                <article class="admin-enquiry-card">
+
+                    <!-- CUSTOMER NAME AND STATUS -->
+                    <div class="enquiry-card-heading">
+
+                        <div>
+                            <h3>{{ enquiry.name }}</h3>
+
+                            <span class="enquiry-id">
+                                Enquiry #{{ enquiry.id }}
+                            </span>
+                        </div>
+
+                        <span class="status-label status-{{ enquiry.status|lower|replace(' ', '-') }}">
+                            {{ enquiry.status }}
+                        </span>
+
+                    </div>
+
+                    <!-- CUSTOMER DETAILS -->
+                    <div class="enquiry-details">
+
+                        <p>
+                            <strong>Phone:</strong>
+                            {{ enquiry.phone }}
+                        </p>
+
+                        <p>
+                            <strong>Email:</strong>
+                            {{ enquiry.email or 'Not provided' }}
+                        </p>
+
+                        <p>
+                            <strong>Service:</strong>
+                            {{ enquiry.service }}
+                        </p>
+
+                        <p>
+                            <strong>Received:</strong>
+                            {{ enquiry.created_at }}
+                        </p>
+
+                    </div>
+
+                    <!-- CUSTOMER MESSAGE -->
+                    <div class="enquiry-message">
+
+                        <strong>Customer Message</strong>
+
+                        <p>{{ enquiry.message }}</p>
+
+                    </div>
+
+                    <!-- UPDATE ENQUIRY STATUS -->
+                    <form
+                        method="POST"
+                        action="{{ url_for('update_enquiry_status', enquiry_id=enquiry.id) }}"
+                        class="status-form"
+                    >
+
+                        <label for="status-{{ enquiry.id }}">
+                            Update Status
+                        </label>
+
+                        <select
+                            name="status"
+                            id="status-{{ enquiry.id }}"
+                        >
+
+                            <option value="New"
+                                {% if enquiry.status == 'New' %}selected{% endif %}>
+                                New
+                            </option>
+
+                            <option value="In Progress"
+                                {% if enquiry.status == 'In Progress' %}selected{% endif %}>
+                                In Progress
+                            </option>
+
+                            <option value="Completed"
+                                {% if enquiry.status == 'Completed' %}selected{% endif %}>
+                                Completed
+                            </option>
+
+                        </select>
+
+                        <button type="submit" class="btn primary">
+                            Save Status
+                        </button>
+
+                    </form>
+
+                    <!-- DELETE THIS ENQUIRY -->
+                    <form
+                        method="POST"
+                        action="{{ url_for('delete_enquiry', enquiry_id=enquiry.id) }}"
+                        class="delete-enquiry-form"
+                        onsubmit="return confirm('Are you sure you want to permanently delete this enquiry?');"
+                    >
+
+                        <button type="submit" class="delete-enquiry-btn">
+                            Delete Enquiry
+                        </button>
+
+                    </form>
+
+                </article>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="admin-empty-state">
+            <h3>No enquiries found</h3>
+
+            <p>
+                Customer enquiries submitted through your contact page
+                will appear here.
+            </p>
+        </div>
+
+    {% endif %}
+
+</section>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Login | TAVENZIQ ENTERPRISES{% endblock %}
+
+{% block content %}
+<section class="admin-login-section">
+    <div class="admin-login-card">
+        <p class="eyebrow">PRIVATE ADMINISTRATION</p>
+        <h1>Admin Login</h1>
+        <p>Sign in to manage TAVENZIQ customer enquiries.</p>
+
+        <form method="POST" class="contact-form">
+            <label for="username">Username</label>
+            <input
+                type="text"
+                id="username"
+                name="username"
+                required
+                autocomplete="username"
+            >
+
+            <label for="password">Password</label>
+            <input
+                type="password"
+                id="password"
+                name="password"
+                required
+                autocomplete="current-password"
+            >
+
+            <button type="submit" class="btn primary">
+                Sign In
+            </button>
+        </form>
+
+        <a href="{{ url_for('home') }}" class="admin-back-link">
+            Return to website
+        </a>
+    </div>
+</section>
+{% endblock %}
