@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block title %}TAVENZIQ ENTERPRISES | Home{% endblock %}
@@ -7,12 +8,15 @@
 <section class="hero">
     <div class="hero-content">
         <p class="eyebrow">WELCOME TO TAVENZIQ ENTERPRISES</p>
+
         <h1>Excellence in Every <span>Opportunity.</span></h1>
+
         <p class="hero-description">
             Your trusted partner in events and entertainment,
             cereals and general supplies, and tours and travel.
             We connect people, deliver quality and create lasting experiences.
         </p>
+
         <div class="hero-buttons">
             <a href="/services" class="btn primary">Explore Our Services</a>
             <a href="/contact" class="btn secondary">Get In Touch</a>
@@ -23,6 +27,7 @@
 <section class="intro section">
     <p class="eyebrow">WHO WE ARE</p>
     <h2>One Enterprise. Multiple Opportunities.</h2>
+
     <p>
         TAVENZIQ ENTERPRISES is a diversified business concept
         committed to providing dependable services and quality products.
@@ -36,6 +41,7 @@
     <h2>Our Core Services</h2>
 
     <div class="service-grid">
+
         <article class="service-card">
             <div class="service-icon">✦</div>
             <h3>Events & Entertainment</h3>
@@ -56,7 +62,76 @@
             <p>Travel arrangements, excursions, tours and memorable experiences.</p>
             <a href="/travel">Explore Service →</a>
         </article>
+
     </div>
+</section>
+
+<!-- CUSTOMER GALLERY PREVIEW -->
+<section class="gallery-section section">
+
+    <p class="eyebrow">OUR WORK IN PICTURES</p>
+    <h2>Explore Our Gallery</h2>
+
+    <p class="gallery-intro">
+        Discover moments, experiences and activities from TAVENZIQ ENTERPRISES.
+    </p>
+
+    {% if featured_media %}
+
+        <div class="public-gallery-grid">
+
+            {% for item in featured_media %}
+
+                <article class="public-gallery-card">
+
+                    {% if item.media_type == 'image' %}
+
+                        <img
+                            src="{{ item.media_url }}"
+                            alt="{{ item.title }}"
+                            loading="lazy"
+                        >
+
+                    {% else %}
+
+                        <video controls preload="metadata">
+                            <source src="{{ item.media_url }}">
+                            Your browser does not support video playback.
+                        </video>
+
+                    {% endif %}
+
+                    <div class="public-gallery-info">
+                        <span>{{ item.category }}</span>
+                        <h3>{{ item.title }}</h3>
+
+                        {% if item.caption %}
+                            <p>{{ item.caption }}</p>
+                        {% endif %}
+                    </div>
+
+                </article>
+
+            {% endfor %}
+
+        </div>
+
+        <a href="{{ url_for('gallery') }}" class="btn primary gallery-button">
+            View Full Gallery
+        </a>
+
+    {% else %}
+
+        <div class="gallery-empty">
+            <h3>Our Gallery Is Coming Soon</h3>
+            <p>
+                We are preparing photographs and videos to share
+                our work and experiences with you.
+            </p>
+        </div>
+
+    {% endif %}
+
 </section>
 
 <section class="cta section">

@@ -1,0 +1,206 @@
+
+{% extends "base.html" %}
+
+{% block title %}Media Manager | TAVENZIQ ENTERPRISES{% endblock %}
+
+{% block content %}
+
+<section class="admin-dashboard">
+
+    <div class="admin-heading">
+        <div>
+            <p class="eyebrow">TAVENZIQ ENTERPRISES</p>
+            <h1>Media Manager</h1>
+            <p>Upload and manage your business photographs and videos.</p>
+        </div>
+
+        <a href="{{ url_for('admin_dashboard') }}" class="btn primary">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <div class="admin-table-heading">
+        <div>
+            <h2>Upload New Media</h2>
+            <p>Add photographs or videos to your company gallery.</p>
+        </div>
+    </div>
+
+    <form
+        method="POST"
+        action="{{ url_for('admin_media') }}"
+        enctype="multipart/form-data"
+        class="enquiry-filter-form"
+    >
+
+        <div>
+            <label for="title">Media Title *</label>
+            <input
+                type="text"
+                id="title"
+                name="title"
+                placeholder="e.g. Wedding Decoration"
+                required
+            >
+        </div>
+
+        <div>
+            <label for="category">Category *</label>
+            <select id="category" name="category" required>
+                <option value="">Select category</option>
+
+                {% for category in categories %}
+                    <option value="{{ category }}">
+                        {{ category }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="caption">Description or Caption</label>
+            <textarea
+                id="caption"
+                name="caption"
+                rows="3"
+                placeholder="Write a short description..."
+            ></textarea>
+        </div>
+
+        <div>
+            <label for="media_file">Choose Photo or Video *</label>
+            <input
+                type="file"
+                id="media_file"
+                name="media_file"
+                accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.mov,.webm"
+                required
+            >
+            <small>
+                Supported: JPG, JPEG, PNG, WEBP, GIF, MP4, MOV and WEBM.
+                Maximum upload size: 60 MB.
+            </small>
+        </div>
+
+        <div>
+            <label for="is_published">Publication Status</label>
+            <select id="is_published" name="is_published">
+                <option value="0">Save as Draft</option>
+                <option value="1">Publish Immediately</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn primary">
+            Upload Media
+        </button>
+
+    </form>
+
+    <div class="admin-table-heading">
+        <div>
+            <h2>Uploaded Media</h2>
+            <p>Manage your existing photographs and videos.</p>
+        </div>
+    </div>
+
+    {% if media_items %}
+
+        <div class="admin-enquiry-list">
+
+            {% for item in media_items %}
+
+                <article class="admin-enquiry-card">
+
+                    <div class="enquiry-card-heading">
+                        <div>
+                            <h3>{{ item.title }}</h3>
+                            <span class="enquiry-id">
+                                Media #{{ item.id }}
+                            </span>
+                        </div>
+
+                        {% if item.is_published %}
+                            <span class="status-label status-completed">
+                                Published
+                            </span>
+                        {% else %}
+                            <span class="status-label status-new">
+                                Draft
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    {% if item.media_type == 'image' %}
+
+                        <img
+                            src="{{ item.media_url }}"
+                            alt="{{ item.title }}"
+                            style="width:100%;max-width:420px;height:auto;border-radius:12px;"
+                            loading="lazy"
+                        >
+
+                    {% else %}
+
+                        <video
+                            controls
+                            preload="metadata"
+                            style="width:100%;max-width:420px;border-radius:12px;"
+                        >
+                            <source src="{{ item.media_url }}">
+                            Your browser does not support video playback.
+                        </video>
+
+                    {% endif %}
+
+                    <div class="enquiry-details">
+                        <p><strong>Category:</strong> {{ item.category }}</p>
+                        <p><strong>Type:</strong> {{ item.media_type|title }}</p>
+                        <p><strong>Uploaded:</strong> {{ item.created_at }}</p>
+                        <p><strong>Caption:</strong> {{ item.caption or 'No caption' }}</p>
+                    </div>
+
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+
+                        <form
+                            method="POST"
+                            action="{{ url_for('toggle_media_visibility', media_id=item.id) }}"
+                        >
+                            <button type="submit" class="btn primary">
+                                {% if item.is_published %}
+                                    Unpublish
+                                {% else %}
+                                    Publish
+                                {% endif %}
+                            </button>
+                        </form>
+
+                        <form
+                            method="POST"
+                            action="{{ url_for('delete_media', media_id=item.id) }}"
+                            onsubmit="return confirm('Permanently delete this media item?');"
+                        >
+                            <button type="submit" class="delete-enquiry-btn">
+                                Delete Media
+                            </button>
+                        </form>
+
+                    </div>
+
+                </article>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="admin-empty-state">
+            <h3>No media uploaded yet</h3>
+            <p>Your uploaded photographs and videos will appear here.</p>
+        </div>
+
+    {% endif %}
+
+</section>
+
+{% endblock %}

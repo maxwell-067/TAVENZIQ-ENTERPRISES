@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Our Gallery | TAVENZIQ ENTERPRISES{% endblock %}
+
+{% block content %}
+
+<section class="page-hero">
+    <div class="container">
+        <p class="eyebrow">TAVENZIQ ENTERPRISES</p>
+        <h1>Our Gallery</h1>
+        <p>Explore our events, supplies, travel experiences and company activities.</p>
+    </div>
+</section>
+
+<section class="section gallery-section">
+    <div class="container">
+
+        <div class="gallery-intro">
+            <p class="eyebrow">EXPLORE OUR WORK</p>
+            <h2>Photos & Videos</h2>
+            <p>Choose a category below to explore the work and experiences we share.</p>
+        </div>
+
+        <div class="gallery-filters">
+            <a
+                href="{{ url_for('gallery', category='All') }}"
+                class="gallery-filter {% if selected_category == 'All' %}active{% endif %}"
+            >
+                All
+            </a>
+
+            {% for category in categories %}
+                <a
+                    href="{{ url_for('gallery', category=category) }}"
+                    class="gallery-filter {% if selected_category == category %}active{% endif %}"
+                >
+                    {{ category }}
+                </a>
+            {% endfor %}
+        </div>
+
+        {% if media_items %}
+            <div class="public-gallery-grid">
+
+                {% for item in media_items %}
+                    <article class="public-gallery-card">
+
+                        {% if item.media_type == "video" %}
+                            <video controls preload="metadata">
+                                <source src="{{ item.media_url }}">
+                                Your browser does not support video playback.
+                            </video>
+                        {% else %}
+                            <img
+                                src="{{ item.media_url }}"
+                                alt="{{ item.title }}"
+                                loading="lazy"
+                            >
+                        {% endif %}
+
+                        <div class="public-gallery-info">
+                            <span>{{ item.category }}</span>
+                            <h3>{{ item.title }}</h3>
+
+                            {% if item.caption %}
+                                <p>{{ item.caption }}</p>
+                            {% endif %}
+                        </div>
+
+                    </article>
+                {% endfor %}
+
+            </div>
+        {% else %}
+            <div class="gallery-empty">
+                <h3>No media found in this category</h3>
+                <p>
+                    We haven't published any photos or videos here yet.
+                    Please check another category.
+                </p>
+
+                {% if selected_category != "All" %}
+                    <a href="{{ url_for('gallery', category='All') }}" class="btn btn-primary">
+                        View All Gallery Items
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+
+    </div>
+</section>
+
+{% endblock %}

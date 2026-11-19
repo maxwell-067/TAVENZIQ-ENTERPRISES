@@ -2,6 +2,9 @@
 import os
 from functools import wraps
 
+import cloudinary
+from cloudinary import uploader
+
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import check_password_hash
 
@@ -13,8 +16,39 @@ app.secret_key = os.environ.get(
     "development-only-change-this-secret-key"
 )
 
+# Cloudinary configuration
+cloudinary.config(
+    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.environ.get("CLOUDINARY_API_KEY"),
+    api_secret=os.environ.get("CLOUDINARY_API_SECRET"),
+    secure=True
+)
+
 init_db()
 
+
+@app.context_processor
+def inject_site_branding():
+    connection = get_db_connection()
+
+    try:
+        settings = {
+            row["setting_key"]: row["setting_value"]
+            for row in connection.execute(
+                """
+                SELECT setting_key, setting_value
+                FROM site_settings
+                """
+            ).fetchall()
+        }
+
+    finally:
+        connection.close()
+
+    return {
+        "site_logo": settings.get("site_logo"),
+        "site_favicon": settings.get("site_favicon")
+    }
 
 def admin_required(view_function):
     @wraps(view_function)
@@ -28,8 +62,68 @@ def admin_required(view_function):
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    connection = get_db_connection()
 
+    try:
+        featured_media = connection.execute(
+            """
+            SELECT * FROM media
+            WHERE is_published = 1
+            ORDER BY created_at DESC, id DESC
+            LIMIT 6
+            """
+        ).fetchall()
+    finally:
+        connection.close()
+
+    return render_template(
+        "index.html",
+        featured_media=featured_media
+    )
+
+@app.route("/gallery")
+def gallery():
+    categories = [
+        "Events & Entertainment",
+        "Cereals & General Supplies",
+        "Tours & Travel",
+        "Company Branding"
+    ]
+
+    selected_category = request.args.get("category", "All").strip()
+
+    if selected_category not in categories and selected_category != "All":
+        selected_category = "All"
+
+    connection = get_db_connection()
+
+    try:
+        if selected_category == "All":
+            media_items = connection.execute(
+                """
+                SELECT * FROM media
+                WHERE is_published = 1
+                ORDER BY created_at DESC, id DESC
+                """
+            ).fetchall()
+        else:
+            media_items = connection.execute(
+                """
+                SELECT * FROM media
+                WHERE is_published = 1 AND category = ?
+                ORDER BY created_at DESC, id DESC
+                """,
+                (selected_category,)
+            ).fetchall()
+    finally:
+        connection.close()
+
+    return render_template(
+        "gallery.html",
+        media_items=media_items,
+        categories=categories,
+        selected_category=selected_category
+    )
 
 @app.route("/about")
 def about():
@@ -208,6 +302,200 @@ def admin_dashboard():
         service_filter=service_filter
     )
 
+# Maximum upload size: 60 MB
+app.config["MAX_CONTENT_LENGTH"] = 60 * 1024 * 1024
+
+ALLOWED_MEDIA_EXTENSIONS = {
+    ".jpg", ".jpeg", ".png", ".webp", ".gif",
+    ".mp4", ".mov", ".webm"
+}
+
+ALLOWED_MEDIA_CATEGORIES = [
+    "Events & Entertainment",
+    "Cereals & General Supplies",
+    "Tours & Travel",
+    "Company Branding"
+]
+
+
+@app.route("/admin/media", methods=["GET", "POST"])
+@admin_required
+def admin_media():
+
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        caption = request.form.get("caption", "").strip()
+        category = request.form.get("category", "").strip()
+        is_published = 1 if request.form.get("is_published") == "1" else 0
+        uploaded_file = request.files.get("media_file")
+
+        if not title or category not in ALLOWED_MEDIA_CATEGORIES:
+            flash("Please provide a title and select a valid category.", "error")
+            return redirect(url_for("admin_media"))
+
+        if not uploaded_file or not uploaded_file.filename:
+            flash("Please select a photo or video to upload.", "error")
+            return redirect(url_for("admin_media"))
+
+        extension = os.path.splitext(uploaded_file.filename)[1].lower()
+
+        if extension not in ALLOWED_MEDIA_EXTENSIONS:
+            flash("Unsupported file type. Please upload an image or video.", "error")
+            return redirect(url_for("admin_media"))
+
+        media_type = "video" if extension in {
+            ".mp4", ".mov", ".webm"
+        } else "image"
+
+        try:
+            result = uploader.upload(
+                uploaded_file,
+                resource_type=media_type,
+                folder="tavenziq-enterprises/media",
+                use_filename=True,
+                unique_filename=True,
+                overwrite=False
+            )
+
+            connection = get_db_connection()
+
+            try:
+                connection.execute(
+                    """
+                    INSERT INTO media (
+                        title,
+                        caption,
+                        category,
+                        media_type,
+                        cloudinary_public_id,
+                        media_url,
+                        is_published
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        title,
+                        caption,
+                        category,
+                        media_type,
+                        result["public_id"],
+                        result["secure_url"],
+                        is_published
+                    )
+                )
+
+                connection.commit()
+
+            finally:
+                connection.close()
+
+            flash("Media uploaded successfully.", "success")
+
+        except Exception:
+            app.logger.exception("Media upload failed.")
+            flash(
+                "Upload failed. Please check the file and try again.",
+                "error"
+            )
+
+        return redirect(url_for("admin_media"))
+
+    connection = get_db_connection()
+
+    try:
+        media_items = connection.execute(
+            """
+            SELECT * FROM media
+            ORDER BY created_at DESC, id DESC
+            """
+        ).fetchall()
+    finally:
+        connection.close()
+
+    return render_template(
+        "admin_media.html",
+        media_items=media_items,
+        categories=ALLOWED_MEDIA_CATEGORIES
+    )
+
+
+@app.route("/admin/media/<int:media_id>/visibility", methods=["POST"])
+@admin_required
+def toggle_media_visibility(media_id):
+
+    connection = get_db_connection()
+
+    try:
+        media = connection.execute(
+            "SELECT * FROM media WHERE id = ?",
+            (media_id,)
+        ).fetchone()
+
+        if not media:
+            flash("Media item not found.", "error")
+            return redirect(url_for("admin_media"))
+
+        new_status = 0 if media["is_published"] else 1
+
+        connection.execute(
+            "UPDATE media SET is_published = ? WHERE id = ?",
+            (new_status, media_id)
+        )
+
+        connection.commit()
+
+        flash("Media publication status updated.", "success")
+
+    finally:
+        connection.close()
+
+    return redirect(url_for("admin_media"))
+
+
+@app.route("/admin/media/<int:media_id>/delete", methods=["POST"])
+@admin_required
+def delete_media(media_id):
+
+    connection = get_db_connection()
+
+    try:
+        media = connection.execute(
+            "SELECT * FROM media WHERE id = ?",
+            (media_id,)
+        ).fetchone()
+
+        if not media:
+            flash("Media item not found.", "error")
+            return redirect(url_for("admin_media"))
+
+        result = uploader.destroy(
+            media["cloudinary_public_id"],
+            resource_type=media["media_type"],
+            invalidate=True
+        )
+
+        if result.get("result") not in ["ok", "not found"]:
+            flash("Cloudinary could not delete this file.", "error")
+            return redirect(url_for("admin_media"))
+
+        connection.execute(
+            "DELETE FROM media WHERE id = ?",
+            (media_id,)
+        )
+
+        connection.commit()
+
+        flash("Media item deleted successfully.", "success")
+
+    except Exception:
+        app.logger.exception("Media deletion failed.")
+        flash("Unable to delete this media item.", "error")
+
+    finally:
+        connection.close()
+
+    return redirect(url_for("admin_media"))
+
 @app.route("/admin/enquiry/<int:enquiry_id>/status", methods=["POST"])
 @admin_required
 def update_enquiry_status(enquiry_id):
@@ -234,7 +522,6 @@ def update_enquiry_status(enquiry_id):
 
     return redirect(url_for("admin_dashboard"))
 
-
 @app.route("/admin/enquiry/<int:enquiry_id>/delete", methods=["POST"])
 @admin_required
 def delete_enquiry(enquiry_id):
@@ -256,6 +543,135 @@ def delete_enquiry(enquiry_id):
         connection.close()
 
     return redirect(url_for("admin_dashboard"))
+
+# WEBSITE BRANDING MANAGER
+
+ALLOWED_BRANDING_EXTENSIONS = {
+    ".png", ".jpg", ".jpeg", ".webp", ".ico"
+}
+
+
+@app.route("/admin/branding", methods=["GET", "POST"])
+@admin_required
+def admin_branding():
+
+    if request.method == "POST":
+
+        asset_type = request.form.get("asset_type", "").strip()
+
+        if asset_type not in ["logo", "favicon"]:
+            flash("Invalid branding image selection.", "error")
+            return redirect(url_for("admin_branding"))
+
+        uploaded_file = request.files.get("branding_file")
+
+        if not uploaded_file or not uploaded_file.filename:
+            flash("Please select an image to upload.", "error")
+            return redirect(url_for("admin_branding"))
+
+        extension = os.path.splitext(uploaded_file.filename)[1].lower()
+
+        if extension not in ALLOWED_BRANDING_EXTENSIONS:
+            flash("Please upload PNG, JPG, JPEG, WEBP or ICO.", "error")
+            return redirect(url_for("admin_branding"))
+
+        try:
+            # Upload the new image to Cloudinary.
+            result = uploader.upload(
+                uploaded_file,
+                resource_type="image",
+                folder="tavenziq-enterprises/branding",
+                use_filename=True,
+                unique_filename=True,
+                overwrite=False
+            )
+
+            setting_key = (
+                "site_logo" if asset_type == "logo"
+                else "site_favicon"
+            )
+
+            connection = get_db_connection()
+
+            try:
+                old_setting = connection.execute(
+                    """
+                    SELECT setting_value
+                    FROM site_settings
+                    WHERE setting_key = ?
+                    """,
+                    (setting_key,)
+                ).fetchone()
+
+                connection.execute(
+                    """
+                    INSERT INTO site_settings (
+                        setting_key, setting_value
+                    )
+                    VALUES (?, ?)
+                    ON CONFLICT(setting_key)
+                    DO UPDATE SET setting_value = excluded.setting_value
+                    """,
+                    (setting_key, result["secure_url"])
+                )
+
+                connection.commit()
+
+            finally:
+                connection.close()
+
+            # Delete the previous Cloudinary image after saving the new one.
+            if old_setting and old_setting["setting_value"]:
+                old_url = old_setting["setting_value"]
+
+                # Only delete previous assets belonging to this branding folder.
+                if "/tavenziq-enterprises/branding/" in old_url:
+                    try:
+                        old_public_id = old_url.split("/upload/")[-1]
+                        old_public_id = old_public_id.split("/")[-1]
+                        old_public_id = os.path.splitext(old_public_id)[0]
+
+                        uploader.destroy(
+                            "tavenziq-enterprises/branding/" + old_public_id,
+                            resource_type="image",
+                            invalidate=True
+                        )
+                    except Exception:
+                        app.logger.exception(
+                            "Could not delete previous branding image."
+                        )
+
+            flash("Website branding image updated successfully.", "success")
+
+        except Exception:
+            app.logger.exception("Branding image upload failed.")
+            flash("Unable to upload the branding image. Please try again.", "error")
+
+        return redirect(url_for("admin_branding"))
+
+    connection = get_db_connection()
+
+    try:
+        settings = connection.execute(
+            """
+            SELECT setting_key, setting_value
+            FROM site_settings
+            WHERE setting_key IN ('site_logo', 'site_favicon')
+            """
+        ).fetchall()
+
+        branding = {
+            row["setting_key"]: row["setting_value"]
+            for row in settings
+        }
+
+    finally:
+        connection.close()
+
+    return render_template(
+        "admin_branding.html",
+        branding=branding
+    )
 
 @app.route("/admin/logout")
 @admin_required

@@ -11,6 +11,10 @@
 
     <meta name="theme-color" content="#10243a">
 
+    {% if site_favicon %}
+    <link rel="icon" href="{{ site_favicon }}">
+    {% endif %}
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
@@ -19,9 +23,21 @@
 <!-- NAVIGATION BAR -->
 <header class="navbar">
 
-    <a href="{{ url_for('home') }}" class="logo">
-        TAVENZIQ <span>ENTERPRISES</span>
-    </a>
+<a href="{{ url_for('home') }}" class="logo">
+
+    {% if site_logo %}
+        <img
+            src="{{ site_logo }}"
+            alt="TAVENZIQ ENTERPRISES Logo"
+            class="site-logo"
+        >
+    {% endif %}
+
+    <span class="company-name">
+        TAVENZIQ ENTERPRISES
+    </span>
+
+</a>
 
     <button
         class="menu-toggle"
@@ -48,6 +64,8 @@
 
         <a href="{{ url_for('travel') }}">Travel</a>
 
+        <a href="{{ url_for('gallery') }}">Our Gallery</a>
+
         <a href="{{ url_for('contact') }}" class="nav-button">
             Contact Us
         </a>
@@ -60,7 +78,6 @@
 <!-- MAIN CONTENT -->
 <main>
 
-    <!-- FLASH MESSAGES -->
     {% with messages = get_flashed_messages(with_categories=true) %}
 
         {% for category, message in messages %}
@@ -73,8 +90,6 @@
 
     {% endwith %}
 
-
-    <!-- PAGE CONTENT -->
     {% block content %}{% endblock %}
 
 </main>
@@ -96,7 +111,6 @@
 
         </div>
 
-
         <div>
 
             <h3>Quick Links</h3>
@@ -108,7 +122,6 @@
             <a href="{{ url_for('contact') }}">Contact Us</a>
 
         </div>
-
 
         <div>
 
@@ -124,11 +137,8 @@
 
     </div>
 
-
     <div class="copyright">
-
         © 2026 TAVENZIQ ENTERPRISES. All Rights Reserved.
-
     </div>
 
 </footer>

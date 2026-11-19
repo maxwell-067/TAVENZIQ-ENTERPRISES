@@ -1,0 +1,88 @@
+
+{% extends "base.html" %}
+
+{% block title %}Website Branding | TAVENZIQ ENTERPRISES{% endblock %}
+
+{% block content %}
+<section class="admin-dashboard">
+
+    <div class="admin-heading">
+        <div>
+            <p class="eyebrow">TAVENZIQ ENTERPRISES</p>
+            <h1>Website Branding</h1>
+            <p>Manage your website logo and browser favicon.</p>
+        </div>
+
+        <a href="{{ url_for('admin_dashboard') }}" class="btn primary">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <div class="admin-card">
+        <h2>Website Logo</h2>
+        <p>Upload the logo displayed in your website navigation.</p>
+
+        {% if branding.get('site_logo') %}
+            <div style="margin:20px 0;padding:20px;background:#f5f5f5;border-radius:10px;">
+                <img src="{{ branding.get('site_logo') }}"
+                     alt="Current website logo"
+                     style="max-width:280px;max-height:120px;object-fit:contain;">
+            </div>
+        {% else %}
+            <p>No website logo has been uploaded yet.</p>
+        {% endif %}
+
+        <form method="POST"
+              action="{{ url_for('admin_branding') }}"
+              enctype="multipart/form-data">
+
+            <input type="hidden" name="asset_type" value="logo">
+
+            <label for="logo">Choose a new logo</label>
+            <input type="file"
+                   id="logo"
+                   name="branding_file"
+                   accept=".png,.jpg,.jpeg,.webp"
+                   required>
+
+            <button type="submit" class="btn primary">
+                Upload Website Logo
+            </button>
+        </form>
+    </div>
+
+    <div class="admin-card" style="margin-top:25px;">
+        <h2>Browser Favicon</h2>
+        <p>This is the small image displayed in the browser tab.</p>
+
+        {% if branding.get('site_favicon') %}
+            <div style="margin:20px 0;">
+                <img src="{{ branding.get('site_favicon') }}"
+                     alt="Current browser favicon"
+                     style="width:64px;height:64px;object-fit:contain;">
+            </div>
+        {% else %}
+            <p>No favicon has been uploaded yet.</p>
+        {% endif %}
+
+        <form method="POST"
+              action="{{ url_for('admin_branding') }}"
+              enctype="multipart/form-data">
+
+            <input type="hidden" name="asset_type" value="favicon">
+
+            <label for="favicon">Choose a new favicon</label>
+            <input type="file"
+                   id="favicon"
+                   name="branding_file"
+                   accept=".png,.jpg,.jpeg,.webp"
+                   required>
+
+            <button type="submit" class="btn primary">
+                Upload Browser Favicon
+            </button>
+        </form>
+    </div>
+
+</section>
+{% endblock %}
